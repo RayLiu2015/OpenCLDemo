@@ -31,61 +31,24 @@ int main(){
     const char *filename = "HelloWorld_Kernel.cl";
     string sourceStr;
     status = convertToString(filename, sourceStr);
-    SAMPLE_CHECK_ERRORS(status);
     const char *source = sourceStr.c_str();
     size_t sourceSize[] = {strlen(source)};
     cl_program program = clCreateProgramWithSource(context, 1, &source, sourceSize, NULL);
     status=clBuildProgram(program, 0, 0, 0, 0, 0);
-    if(status == CL_BUILD_PROGRAM_FAILURE)
-    {
-        size_t log_length = 0;
-        status = clGetProgramBuildInfo(
-            program,
-            devices[0],
-            CL_PROGRAM_BUILD_LOG,
-            0,
-            0,
-            &log_length
-        );
-        SAMPLE_CHECK_ERRORS(status);
-
-        std::vector<char> log(log_length);
-
-        status = clGetProgramBuildInfo(
-            program,
-            devices[0],
-            CL_PROGRAM_BUILD_LOG,
-            log_length,
-            &log[0],
-            0
-        );
-        SAMPLE_CHECK_ERRORS(status);
-
-    }
-    SAMPLE_CHECK_ERRORS(status);
-
     /**Step 7: Initial input,output for the host and create memory objects for the kernel*/
-    const int NUM=10;
+    const int NUM = 100000;
     float* input = new float[NUM];
-    for(int i=0;i<NUM;i++)
-        input[i]=float(i);
+    for(int i = 0;i < NUM;i++)
+        input[i] = float(random());
     float* output = new float[NUM];
-
     cl_mem inputBuffer = clCreateBuffer(context, CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR, (NUM) * sizeof(float), (void *) input, NULL);
     cl_mem outputBuffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY , NUM * sizeof(float), NULL, NULL);
-    cout << "asdf" << endl;
-    // status = clEnqueueWriteBuffer(commandQueue, inputBuffer, CL_TRUE, 0, (NUM) * sizeof(double), (void *)input, 0, NULL, NULL);
-    cout << "asdf" << endl;
-
     /**Step 8: Create kernel object */
     cl_kernel kernel = clCreateKernel(program,"helloworld", NULL);
-
+    auto time0 = time();
     /**Step 9: Sets Kernel arguments.*/
     status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &inputBuffer);
-    SAMPLE_CHECK_ERRORS(status);
     status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &outputBuffer);
-    SAMPLE_CHECK_ERRORS(status);
-    cout << "asdf" << endl;
     /**Step 10: Running the kernel.*/
     size_t global_work_size[1] = {NUM};
     cl_event enentPoint;
@@ -93,12 +56,13 @@ int main(){
     SAMPLE_CHECK_ERRORS(status);
     clWaitForEvents(1,&enentPoint); ///wait
     clReleaseEvent(enentPoint);
-
     /**Step 11: Read the cout put back to host memory.*/
     status = clEnqueueReadBuffer(commandQueue, outputBuffer, CL_TRUE, 0, NUM * sizeof(float), output, 0, NULL, NULL);
-    SAMPLE_CHECK_ERRORS(status);
-    for (int i = 0; i < NUM; i++)
-        cout<<output[i]<<endl;
+    auto time1 = time();
+    auto time_use = time_diff(time0, time1);
+    std::cout << " time cost: " << time_use << std::endl;
+    // for (int i = 0; i < NUM; i++)
+    //     cout << output[i] << endl;
 
     /**Step 12: Clean the resources.*/
     status = clReleaseKernel(kernel);//*Release kernel.

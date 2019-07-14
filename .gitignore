@@ -37,3 +37,13 @@
 *.DS_Store
 
 build/.DS_Store
+
+build/CMakeFiles
+
+build/CMakeCache.txt
+
+build/cmake_install.cmake
+
+build/main
+
+build/Makefile
